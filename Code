@@ -1,0 +1,970 @@
+library(readxl)
+library(reshape)
+library(ggplot2)
+library(cowplot)
+library(ggExtra)
+library(nlme)
+library(car)
+library(lme4)
+library(glmmTMB)
+library(bbmle)
+library(DHARMa)
+library(MuMIn)
+library(emmeans)
+library(performance)
+library(sjmisc)
+library(ggeffects)
+library(Rmisc)
+library(grid)
+library(gridExtra)
+library(tidyverse)
+library(RColorBrewer)
+library(readxl)
+library(reshape)
+library(ggplot2)
+library(cowplot)
+library(ggExtra)
+library(nlme)
+library(car)
+library(lme4)
+library(glmmTMB)
+library(bbmle)
+library(DHARMa)
+library(MuMIn)
+library(emmeans)
+library(performance)
+library(sjmisc)
+library(ggeffects)
+library(Rmisc)
+library(grid)
+library(gridExtra)
+library(tidyverse)
+library(RColorBrewer)
+library(readODS)
+
+setwd("~/Rapport de stage")
+
+
+Alice<-read_xlsx("C:/Users/poins/OneDrive/Documents/Rapport de stage/phosphaure_data.xlsx", sheet = 3)
+
+str(Alice)
+
+#Changing variables from numeric to factor
+Alice$site<-as.factor(Alice$site)
+Alice$species<-as.factor(Alice$species)
+Alice$depth<-as.factor(Alice$depth)
+
+
+Alice_clean1<- subset(Alice, site!="Ref.Mat")
+Alice_clean2<- subset(Alice_clean1, site!="Blank")
+Alice_clean3<- subset(Alice_clean2, depth!="05_10")
+
+
+
+
+#Reorder sites from North to South
+neworder <- c("SC","RN","CAL",
+              "SJ","LOYOLA")
+
+Alice_ready <- arrange(transform(Alice_clean3,
+                           site=factor(site,levels=neworder)),site)
+Alice_ready$C_N_perc<-Alice_ready$C_perc/Alice_ready$n_perc
+
+Alice_ready$P_N_perc<-Alice_ready$n_perc/Alice_ready$Phosphorus_perc
+
+M35<- lm((Phosphorus_perc)~ species*depth*site, data=Alice_ready)
+res<-simulateResiduals(fittedModel = M35)
+plot(res)
+testDispersion(res)
+testZeroInflation(res)
+testQuantiles
+(res)
+Anova(M35)
+
+g=emmeans(M35, tukey~depth:site:species)
+g
+z=emmeans(M35, tukey~species:site:species)
+z
+
+ggplot(Alice_ready, aes(species,Phosphorus_perc,fill=depth))+
+  geom_boxplot()+
+  #stat_summary(size=0.8)+
+  facet_grid(~site)+
+  #xlim(0.0, 16)+
+  #scale_y_discrete(limits=rev)+
+  #geom_smooth(method="lm", alpha=0.35)+
+  #geom_point(size=1)+
+  theme_cowplot()+
+  labs(y="Phosphorus %")+
+  #scale_y_discrete(limits = rev(levels(selection$Initial)))+
+  scale_color_discrete(labels=c('S. alterniflora', 'S. densiflora', 'Sarcocornia sp'))+
+  #scale_color_manual(values = getPalette(colourCount))+
+  theme(legend.direction = "horizontal",
+        legend.position="top",
+        #legend.position= c(0.90, 0.90),
+        legend.title = element_text(size=15), 
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 15),
+        strip.text.x = element_text(size = 15),
+        strip.text.y = element_text(face = "bold"),
+        axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15),
+        legend.text=element_text(size=15),
+        panel.grid.major = element_line(color = "grey80"),
+        panel.grid.minor = element_line(color = "grey90"),
+        panel.background = element_rect(fill = "white", color = NA)
+  )
+
+######
+#nITROGEN
+M78<- lm(sqrt(n_perc)~ species*site, data=Alice_ready)
+res<-simulateResiduals(fittedModel = M78)
+plot(res)
+testDispersion(res)
+testZeroInflation(res)
+testQuantiles
+(res)
+Anova(M78)
+
+emmeans(M78, tukey~site:species)
+
+M79<- lm(sqrt(n_perc)~ species*depth, data=Alice_ready)
+res<-simulateResiduals(fittedModel = M79)
+plot(res)
+testDispersion(res)
+testZeroInflation(res)
+testQuantiles
+(res)
+Anova(M79)
+emmeans(M79, tukey~species)
+M80<- lm(sqrt(n_perc)~ site*depth, data=Alice_ready)
+res<-simulateResiduals(fittedModel = M80)
+plot(res)
+testDispersion(res)
+testZeroInflation(res)
+testQuantiles
+(res)
+Anova(M80)
+emmeans(M80, tukey~site)
+emmeans(M80, tukey~depth)
+
+ggplot(Alice_ready, aes(species,n_perc,fill=depth))+
+  geom_boxplot()+
+  #stat_summary(size=0.8)+
+  facet_grid(~site)+
+  #xlim(0.0, 16)+
+  #scale_y_discrete(limits=rev)+
+  #geom_smooth(method="lm", alpha=0.35)+
+  #geom_point(size=1)+
+  theme_cowplot()+
+  labs(y="Nitrogen %")+
+  #scale_y_discrete(limits = rev(levels(selection$Initial)))+
+  scale_color_discrete(labels=c('S. alterniflora', 'S. densiflora', 'Sarcocornia sp'))+
+  #scale_color_manual(values = getPalette(colourCount))+
+  theme(legend.direction = "horizontal",
+        legend.position="top",
+        #legend.position= c(0.90, 0.90),
+        legend.title = element_text(size=15), 
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 15),
+        strip.text.x = element_text(size = 15),
+        strip.text.y = element_text(face = "bold"),
+        axis.text.x = element_text(size = 15),
+        axis.text.y = element_text(size = 15),
+        legend.text=element_text(size=15),
+        panel.grid.major = element_line(color = "grey80"),
+        panel.grid.minor = element_line(color = "grey90"),
+        panel.background = element_rect(fill = "white", color = NA)
+  )
+
+
+
+
+#%P WITH %N
+M00<- glmmTMB((Phosphorus_perc)~ species*depth*n_perc+(1|site), data=Alice_ready)
+res<-simulateResiduals(fittedModel = M00)
+plot(res)
+testDispersion(res)
+testZeroInflation(res)
+testQuantiles(res)
+Anova(M00)
+
+
+emm_s.t <- emtrends(M00, pairwise ~ depth:species, var="n_perc")
+emm_s.t
+
+
+
+ggplot(Alice_ready, aes(Phosphorus_perc,n_perc, color=depth))+
+  geom_point()+
+  facet_wrap(~ species)+
+  stat_smooth(method="lm")+
+  labs(x="Phosphorus %",y="nitrogen %",)+
+  theme(panel.spacing = 2,"lines")
+
+
+# Define a named vector for the full species names
+species_labels <- c(
+  "ALTERNI" = "S.alterniflora",
+  "DENSI" = "S.densiflora",
+  "SARCO" = "Salicornia.spp"
+)
+
+
+ggplot(Alice_ready, aes( n_perc,Phosphorus_perc, color=depth)) +
+  facet_grid(~ species, labeller = labeller(species = species_labels)) +
+  geom_smooth(method="lm", alpha=0.35) +
+  geom_point(size=1) +
+  theme_cowplot() +
+  labs(y="Phosphorus (weight%)", x="Nitrogen (weight%)") +
+  theme(
+    legend.direction = "horizontal",
+    legend.position = "top",
+    legend.title = element_text(size = 20), 
+    axis.title.x = element_text(size=20),
+    strip.text.x = element_text(size = 20),
+    strip.text.y = element_text(face = "bold"),
+    axis.text.y = element_text(size = 20),
+    legend.text = element_text(size = 20),
+    axis.title.y = element_text(size=20),
+    axis.text.x = element_text(size=20),
+    panel.spacing = unit(2, "lines") # Ajout de cette ligne pour espacer les facettes
+  )
+
+
+
+#%P WITH %C
+M0<- glmmTMB((Phosphorus_perc)~ species*depth*C_perc+(1|site), data=Alice_ready)
+res<-simulateResiduals(fittedModel = M0)
+plot(res)
+testDispersion(res)
+testZeroInflation(res)
+testQuantiles(res)
+Anova(M0)
+
+
+emm_s.t <- emtrends(M0, pairwise ~ depth:species, var="C_perc")
+emm_s.t
+
+# Define a named vector for the full species names
+species_labels <- c(
+  "ALTERNI" = "S.alterniflora",
+  "DENSI" = "S.densiflora",
+  "SARCO" = "Salicornia.spp"
+)
+
+
+
+ggplot(Alice_ready, aes(Phosphorus_perc,C_perc,color=depth))+
+  #geom_pointt()+
+  #stat_summary(size=0.8)+
+  facet_grid(~species, labeller = labeller(species = species_labels))+
+  #xlim(0.0, 16)+
+  #scale_y_discrete(limits=rev)+
+  geom_smooth(method="lm", alpha=0.35)+
+  geom_point(size=4)+
+  theme_cowplot()+
+  labs(x="Phosphorus (weight%)",y="Carbon(weight%)")+
+  #scale_y_discrete(limits = rev(levels(selection$Initial)))+
+  #scale_color_discrete(labels=c('S. alterniflora', 'S. densiflora', 'Sarcocornia sp'))+
+  #scale_color_manual(values = getPalette(colourCount))+
+  labs(x="Phosphorus (weight %)",y="Carbon (weight %)")+
+theme(legend.direction = "horizontal",
+      legend.position="top",
+      #legend.position= c(0.90, 0.90),
+      legend.title = element_text(size=20), 
+      axis.title.x = element_text(size=20),
+      #axis.title = element_text(size = 20),
+      strip.text.x = element_text(size = 20),
+      strip.text.y = element_text(face = "bold"),
+      #axis.text.x = element_text(angle = 0),
+      axis.text.y = element_text(size = 20),
+      axis.text.x = element_text(size=20),
+      axis.title.y = element_text(size=20),
+      legend.text=element_text(size=20),
+      panel.spacing = unit(2, "lines"),
+      panel.grid.major = element_line(color = "grey80"),
+      panel.grid.minor = element_line(color = "grey90"),
+      panel.background = element_rect(fill = "white", color = NA)
+)
+
+ggplot(Alice_ready, aes(Phosphorus_perc, C_perc, color = depth)) +
+  geom_point(size = 3) +
+  facet_grid(~ species) +
+  geom_smooth(method = "lm", alpha = 0.35) +
+  theme_cowplot() +
+  labs(x = "Phosphorus (weight%)", y = "Carbon (weight%)") +
+  scale_linetype_manual(values = c("solid", "dashed")) +
+  theme(
+    legend.direction = "horizontal",
+    legend.position = "top",
+    legend.title = element_text(size = 20),
+    axis.title.x = element_text(size = 20),
+    strip.text.x = element_text(size = 20),
+    strip.text.y = element_text(face = "bold"),
+    axis.text.y = element_text(size = 20),
+    axis.text.x = element_text(size = 20),
+    axis.title.y = element_text(size = 20),
+    legend.text = element_text(size = 20),
+    panel.spacing = unit(5, "lines"),
+    panel.grid.major = element_line(color = "grey80"),
+    panel.grid.minor = element_line(color = "grey90"),
+    panel.background = element_rect(fill = "white", color = NA)
+  )
+
+
+
+
+#%P WITCH C_N_perc
+M1<- glmmTMB(sqrt(Phosphorus_perc)~ species*depth*C_N_perc+(1|site), data=Alice_ready)
+res<-simulateResiduals(fittedModel = M1)
+plot(res)
+testDispersion(res)
+testZeroInflation(res)
+testQuantiles(res)
+Anova(M1)
+
+
+P=emm_s.t <- emtrends(M1, pairwise ~ depth:species, var="C_N_perc")
+P$emtrends
+
+
+
+ggplot(Alice_ready, aes(Phosphorus_perc,C_N_perc, color=depth))+
+  geom_line()+
+  facet_wrap(~ species)+
+  stat_smooth(method="lm")+
+  labs(x="Sediment density",y="mean % weight loss")
+
+
+
+ggplot(Alice_ready, aes(Phosphorus_perc,C_N_perc,color=depth))+
+  #geom_pointt()+
+  #stat_summary(size=0.8)+
+  facet_grid(~species, labeller = labeller(species = species_labels))+
+  #xlim(0.0, 16)+
+  #scale_y_discrete(limits=rev)+
+  geom_smooth(method="lm", alpha=0.35)+
+  geom_point(size=1)+
+  theme_cowplot()+
+  labs(y="Depth (cm)")+
+  #scale_y_discrete(limits = rev(levels(selection$Initial)))+
+  #scale_color_discrete(labels=c('S. alterniflora', 'S. densiflora', 'Sarcocornia sp'))+
+  #scale_color_manual(values = getPalette(colourCount))+
+  labs(y="C_N ratio (weight%)",x="Phosphorus (weight%)")+
+  theme(legend.direction = "horizontal",
+      legend.position="top",
+      #legend.position= c(0.90, 0.90),
+      legend.title = element_text(size=10), 
+      axis.title.x = element_text(size=14),
+      #axis.title = element_text(size = 20),
+      strip.text.x = element_text(size = 15),
+      strip.text.y = element_text(face = "bold"),
+      #axis.text.x = element_text(angle = 0),
+      axis.text.y = element_text(size = 10),
+      legend.text=element_text(size=10),
+      panel.spacing = unit(2, "lines"))
+
+
+
+ggplot(Alice_ready, aes(Phosphorus_perc,site, color=depth))+
+  geom_point()+
+  facet_wrap(~ species)+
+  #stat_smooth(method="lm")+
+  labs(x="p%",y="C_N_PERC")
+#######################################################
+#%P WITCH C_N_perc
+M12<- glmmTMB((Phosphorus_perc)~ site*species*C_N_perc+(1|species), data=Alice_ready)
+res<-simulateResiduals(fittedModel = M12)
+plot(res)
+testDispersion(res)
+testZeroInflation(res)
+testQuantiles(res)
+Anova(M1)
+
+
+P=emm_s.t <- emtrends(M1, pairwise ~ depth:species, var="C_N_perc")
+P$emtrends
+
+
+
+ggplot(Alice_ready, aes(Weight_perc,C_N_perc, color=depth))+
+  geom_line()+
+  facet_wrap(~ species)+
+  #stat_smooth(method="lm")+
+  labs(x="Sediment density",y="mean % weight loss")
+
+
+
+ggplot(Alice_ready, aes(Phosphorus_perc,C_N_perc,color=depth))+
+  #geom_pointt()+
+  #stat_summary(size=0.8)+
+  facet_grid(~species)+
+  #xlim(0.0, 16)+
+  #scale_y_discrete(limits=rev)+
+  geom_smooth(method="lm", alpha=0.35)+
+  geom_point(size=1)+
+  theme_cowplot()+
+  labs(y="Depth (cm)")+
+  #scale_y_discrete(limits = rev(levels(selection$Initial)))+
+  #scale_color_discrete(labels=c('S. alterniflora', 'S. densiflora', 'Sarcocornia sp'))+
+  #scale_color_manual(values = getPalette(colourCount))+
+  labs(x="C_N_%",y="P%")
+theme(legend.direction = "horizontal",
+      legend.position="top",
+      #legend.position= c(0.90, 0.90),
+      legend.title = element_text(size=15), 
+      axis.title.x = element_blank(),
+      #axis.title = element_text(size = 20),
+      strip.text.x = element_text(size = 20),
+      strip.text.y = element_text(face = "bold"),
+      #axis.text.x = element_text(angle = 0),
+      axis.text.y = element_text(size = 10),
+      legend.text=element_text(size=15))
+
+
+
+
+####################################
+library(ggplot2)
+ggplot(Alice_ready, aes(x=interaction(species, depth), y=Phosphorus_perc)) +
+  geom_boxplot() +
+  facet_wrap(~ site) +
+  labs(x="Espèce et Profondeur", y="Phosphore", title="Distribution du phosphore par Espèce, Site et Profondeur")
+
+ggplot(Alice_ready, aes(x=interaction(species, depth), y=Phosphorus_perc, fill=depth)) +
+  geom_boxplot() +
+  facet_wrap(~ site) +
+  labs(x="Espèce et Profondeur", y="Phosphore", title="Distribution du phosphore par Espèce, Site et Profondeur") +
+  theme_minimal() +
+  scale_fill_brewer(palette="Set2") # Choisissez une palette de couleurs appropriée
+
+
+
+ggplot(Alice_ready, aes(x=factor(depth), y=Phosphorus_perc, color=factor(species), group=species)) +
+  geom_line() +
+  geom_point() +
+  labs(x="Profondeur", y="Pourcentage de Phosphore", color="Espèce") +
+  ggtitle("Interaction entre Espèce, Profondeur et Pourcentage de Phosphore") +
+  theme_minimal()
+
+
+
+library(dplyr)
+library(ggplot2)
+
+# Calculer les moyennes et les erreurs standards
+summary_data <- Alice_ready %>%
+  group_by(species, depth) %>%
+  summarise(
+    mean_phosphorus = mean(Phosphorus_perc),
+    sd_phosphorus = sd(Phosphorus_perc),
+    n = n(),
+    se_phosphorus = sd_phosphorus / sqrt(n)
+  )
+
+# Visualisation avec barres d'erreur
+ggplot(summary_data, aes(x=factor(depth), y=mean_phosphorus, color=species, group=species)) +
+  geom_line() +
+  geom_point() +
+  geom_errorbar(aes(ymin=mean_phosphorus-se_phosphorus, ymax=mean_phosphorus+se_phosphorus), width=0.2) +
+  labs(x="Profondeur", y="Pourcentage de Phosphore", color="Espèce") +
+  ggtitle("Interaction entre Espèce, Profondeur et Pourcentage de Phosphore avec Barres d'Erreur") +
+  theme_minimal()
+
+####################################
+#anova
+anova_model <- aov(Phosphorus_perc ~ species *site* depth, data=Alice_ready)
+summary(anova_model)
+tukey_results <- TukeyHSD(anova_model)
+plot(tukey_results)
+plot(anova_model)
+
+print(tukey_results)
+emmeans(anova_model,tukey~species|site|depth)
+############
+# Calculer les moyennes et les erreurs standards
+summary_data_depth <- Alice_ready %>%
+  group_by(depth) %>%
+  summarise(
+    mean_phosphorus = mean(Phosphorus_perc),
+    sd_phosphorus = sd(Phosphorus_perc),
+    n = n(),
+    se_phosphorus = sd_phosphorus / sqrt(n)
+  )
+
+# Visualisation avec ggplot2 sans distinction des espèces
+ggplot(summary_data_depth, aes(x=factor(depth), y=mean_phosphorus)) +
+  #geom_line(group=1, color="blue") +  # Ajouter une ligne
+  geom_point(color="blue") +  # Ajouter des points
+  geom_errorbar(aes(ymin=mean_phosphorus-se_phosphorus, ymax=mean_phosphorus+se_phosphorus), width=0.2, color="blue") +  # Ajouter des barres d'erreur
+  labs(x="Profondeur", y="Pourcentage de Phosphore") +
+  ggtitle("Pourcentage de Phosphore en Fonction des Tranches de Profondeur") +
+  theme_minimal()
+
+
+summary_data_species <- Alice_ready %>%
+  group_by(species) %>%
+  summarise(
+    mean_phosphorus = mean(Phosphorus_perc),
+    sd_phosphorus = sd(Phosphorus_perc),
+    n = n(),
+    se_phosphorus = sd_phosphorus / sqrt(n)
+  )
+
+# Visualisation avec ggplot2 sans distinction de profondeur
+ggplot(summary_data_species, aes(x=factor(species), y=mean_phosphorus)) +
+  #geom_line(group=1, color="blue") +  # Ajouter une ligne
+  geom_point(color="blue") +  # Ajouter des points
+  #geom_errorbar(aes(ymin=mean_phosphorus-se_phosphorus, ymax=mean_phosphorus+se_phosphorus), width=0.2, color="blue") +  # Ajouter des barres d'erreur
+  labs(x="Espèce", y="Pourcentage de Phosphore") +
+  ggtitle("Pourcentage de Phosphore en Fonction des Espèces") +
+  theme_minimal()
+
+
+
+
+
+
+
+
+
+
+#%N_P WITH %C
+M45<- glmmTMB(sqrt(C_perc)~ species*depth*P_N_perc+(1|site), data=Alice_ready)
+res<-simulateResiduals(fittedModel = M45)
+plot(res)
+testDispersion(res)
+testZeroInflation(res)
+testQuantiles(res)
+Anova(M45)
+
+
+emm_s.t <- emtrends(M45, pairwise ~ species, var="P_N_perc")
+emm_s.t
+f<- emtrends(M45, pairwise ~ depth, var="P_N_perc")
+f
+
+
+# Define a named vector for the full species names
+species_labels <- c(
+  "ALTERNI" = "S.alterniflora",
+  "DENSI" = "S.densiflora",
+  "SARCO" = "Salicornia.spp"
+)
+
+ggplot(Alice_ready, aes(P_N_perc,C_perc,, color=depth)) +
+  facet_grid(~species, labeller = labeller(species = species_labels)) +
+  geom_smooth(method="lm", alpha=0.35) +
+  geom_point(size=4,aes(shape=site)) +
+  theme_cowplot() +
+  labs(y="Carbon (weight%)", x="Ratio N/P (weight%)") +
+  theme(
+    legend.direction = "horizontal",
+    legend.position = "top",
+    legend.title = element_text(size = 20), 
+    axis.title.x = element_text(size=20),
+    axis.title.y = element_text(size=20),
+    strip.text.x = element_text(size = 20),
+    strip.text.y = element_text(face = "bold"),
+    axis.text.x = element_text(size=20),
+    axis.text.y = element_text(size = 20),
+    legend.text = element_text(size = 20),
+    panel.spacing = unit(4, "lines"),
+    panel.grid.major = element_line(color = "grey80"),
+    panel.grid.minor = element_line(color = "grey90"),
+    panel.background = element_rect(fill = "white", color = NA)# Ajout de cette ligne pour espacer les facettes
+  )
+
+###########################
+M45<- glmmTMB(sqrt(C_perc)~ species*depth*P_N_perc+(1|site), data=Alice_ready)
+res<-simulateResiduals(fittedModel = M45)
+plot(res)
+testDispersion(res)
+testZeroInflation(res)
+testQuantiles(res)
+Anova(M45)
+
+
+emm_s.t <- emtrends(M45, pairwise ~ species, var="P_N_perc")
+emm_s.t
+f<- emtrends(M45, pairwise ~ depth, var="P_N_perc")
+f
+
+ggplot(Alice_ready, aes(P_N_perc,C_perc, color=depth)) +
+  facet_grid(~species) +
+  geom_smooth(method="lm", alpha=0.35) +
+  geom_point(size=2) +
+  theme_cowplot() +
+  labs(y="Carbon (weight%)", x="Ratio N/P (weight%)") +
+  theme(
+    legend.direction = "horizontal",
+    legend.position = "top",
+    legend.title = element_text(size = 10), 
+    axis.title.x = element_text(size=15),
+    strip.text.x = element_text(size = 15),
+    strip.text.y = element_text(face = "bold"),
+    axis.text.y = element_text(size = 10),
+    legend.text = element_text(size = 10),
+    panel.spacing = unit(3, "lines"),
+    panel.grid.major = element_line(color = "grey80"),
+    panel.grid.minor = element_line(color = "grey90"),
+    panel.background = element_rect(fill = "white", color = NA)
+  )
+
+###########################
+
+Alice_ready$P_C_perc<-Alice_ready$C_perc/Alice_ready$Phosphorus_perc
+
+ggplot(Alice_ready, aes(n_perc,P_C_perc,, color=depth)) +
+  facet_grid(~species) +
+  geom_smooth(method="lm", alpha=0.35) +
+  geom_point(size=1) +
+  theme_cowplot() +
+  labs(x="Carbon (weight%)", y="Ratio C/P (weight%)") +
+  theme(
+    legend.direction = "horizontal",
+    legend.position = "top",
+    legend.title = element_text(size = 10), 
+    axis.title.x = element_text(size=15),
+    strip.text.x = element_text(size = 15),
+    strip.text.y = element_text(face = "bold"),
+    axis.text.y = element_text(size = 10),
+    legend.text = element_text(size = 10),
+    panel.spacing = unit(2, "lines") # Ajout de cette ligne pour espacer les facettes
+  )
+
+
+
+M49<- lm(log1p(n_perc)~ species*depth*P_C_perc, data=Alice_ready)
+res<-simulateResiduals(fittedModel = M49)
+plot(res)
+testDispersion(res)
+testZeroInflation(res)
+testQuantiles(res)
+Anova(M49)
+
+e
+emmeans(M49, tukey~depth)
+
+##########
+
+# Ajuster le modèle
+M0 <- glmmTMB(Phosphorus_perc ~ species * depth * C_perc + (1 | site), data = Alice_ready)
+
+# Simuler les résidus pour vérifier les diagnostics
+res <- simulateResiduals(fittedModel = M0)
+plot(res)
+testDispersion(res)
+testZeroInflation(res)
+testQuantiles(res)
+Anova(M0)
+
+# Extraire les tendances et leurs significativités
+emm_s.t <- emtrends(M0, pairwise ~ depth:species, var = "C_perc")
+summary(emm_s.t)
+
+# Extraire les résultats des tendances
+emtrends_results <- data.frame(
+  depth = c("0_5", "10_20", "0_5", "10_20", "0_5", "10_20"),
+  species = c("ALTERNI", "ALTERNI", "DENSI", "DENSI", "SARCO", "SARCO"),
+  C_perc_trend = c(0.01041, 0.00445, -0.00407, -0.03928, 0.00126, 0.02204),
+  SE = c(0.00472, 0.00383, 0.00366, 0.02950, 0.00693, 0.00646),
+  lower_CL = c(0.000915, -0.003253, -0.011421, -0.098598, -0.012675, 0.009057),
+  upper_CL = c(0.01990, 0.01215, 0.00329, 0.02004, 0.01520, 0.03501)
+)
+
+# Déterminer la significativité basée sur les intervalles de confiance
+emtrends_results$significant <- with(emtrends_results, lower_CL > 0 | upper_CL < 0)
+
+
+# Inverser la significativité
+emtrends_results$significant <- !emtrends_results$significant
+# Fusionner les résultats de significativité avec vos données principales
+Alice_ready <- Alice_ready %>%
+  left_join(emtrends_results, by = c("species", "depth"))
+
+
+
+# Créer le graphique avec des courbes significatives pleines et non significatives en pointillés,
+# et des points de formes différentes pour chaque site
+ggplot(Alice_ready, aes(Phosphorus_perc, C_perc, color = depth)) +
+  geom_point(size = 4,aes(shape=site)) +
+  facet_grid(~ species, labeller = labeller(species = species_labels)) +
+  geom_smooth(aes(linetype = ifelse(significant, "solid", "dashed")), method = "lm", alpha = 0.35) +
+  theme_cowplot() +
+  labs(x = "Phosphorus (weight%)", y = "Carbon (weight%)") +
+  scale_linetype_manual(values = c("solid", "dashed"), guide = FALSE) +
+  theme(
+    legend.direction = "horizontal",
+    legend.position = "top",
+    legend.title = element_text(size = 20),
+    axis.title.x = element_text(size = 20),
+    strip.text.x = element_text(size = 20),
+    strip.text.y = element_text(face = "bold"),
+    axis.text.y = element_text(size = 20),
+    axis.text.x = element_text(size = 20),
+    axis.title.y = element_text(size = 20),
+    legend.text = element_text(size = 20),
+    panel.spacing = unit(4, "lines"),
+    panel.grid.major = element_line(color = "grey80"),
+    panel.grid.minor = element_line(color = "grey90"),
+    panel.background = element_rect(fill = "white", color = NA)
+  )
+#######
+
+
+# Ajuster le modèle M45
+M45 <- glmmTMB(sqrt(C_perc) ~ species * depth * P_N_perc + (1 | site), data = Alice_ready)
+
+# Simuler les résidus pour vérifier les diagnostics
+res <- simulateResiduals(fittedModel = M45)
+plot(res)
+testDispersion(res)
+testZeroInflation(res)
+testQuantiles(res)
+Anova(M45)
+
+# Extraire les tendances pour species et depth
+emm_species <- data.frame(
+  species = c("ALTERNI", "DENSI", "SARCO"),
+  P_N_perc_trend = c(0.0981, 0.0378, 0.1377),
+  SE = c(0.0174, 0.0348, 0.0340),
+  df = rep(52, 3),
+  lower.CL = c(0.0630, -0.0321, 0.0695),
+  upper.CL = c(0.133, 0.108, 0.206)
+)
+
+emm_depth <- data.frame(
+  depth = c("0_5", "10_20"),
+  P_N_perc_trend = c(0.0295, 0.1528),
+  SE = c(0.00487, 0.03411),
+  df = rep(52, 2),
+  lower.CL = c(0.0197, 0.0844),
+  upper.CL = c(0.0393, 0.2213)
+)
+
+# Fusionner les résultats des tendances avec vos données principales pour species
+Alice_ready <- merge(Alice_ready, emm_species, by = "species", all.x = TRUE)
+
+# Fusionner les résultats des tendances avec vos données principales pour depth
+Alice_ready <- merge(Alice_ready, emm_depth, by = "depth", all.x = TRUE)
+
+# Définir une variable pour indiquer les courbes significatives
+Alice_ready$significant_color <- ifelse(Alice_ready$P_N_perc_trend >= Alice_ready$lower.CL & Alice_ready$P_N_perc_trend <= Alice_ready$upper.CL, "Significatif", "Non significatif")
+
+# Créer le graphique en utilisant des couleurs différentes pour les courbes significatives
+ggplot(Alice_ready, aes(P_N_perc, C_perc, color = significant_color)) +
+  facet_grid(~ species) +
+  geom_smooth(method = "lm", se = FALSE, alpha = 0.35) +
+  geom_point(size = 1) +
+  theme_cowplot() +
+  labs(y = "Carbon (weight%)", x = "Ratio N/P (weight%)") +
+  scale_color_manual(values = c("Significatif" = "blue", "Non significatif" = "red")) +
+  theme(
+    legend.direction = "horizontal",
+    legend.position = "top",
+    legend.title = element_text(size = 10), 
+    axis.title.x = element_text(size = 15),
+    strip.text.x = element_text(size = 15),
+    strip.text.y = element_text(face = "bold"),
+    axis.text.y = element_text(size = 10),
+    legend.text = element_text(size = 10),
+    panel.spacing = unit(3, "lines"),
+    panel.grid.major = element_line(color = "grey80"),
+    panel.grid.minor = element_line(color = "grey90"),
+    panel.background = element_rect(fill = "white", color = NA)
+  )
+
+#########
+# Ajuster le modèle M00
+M00 <- glmmTMB((Phosphorus_perc) ~ species * depth * n_perc + (1|site), data = Alice_ready)
+
+# Simuler les résidus pour vérifier les diagnostics
+res <- simulateResiduals(fittedModel = M00)
+plot(res)
+testDispersion(res)
+testZeroInflation(res)
+testQuantiles(res)
+Anova(M00)
+
+# Extraire les tendances pour species et depth
+emtrends_results <- data.frame(
+  depth = c("0_5", "10_20", "0_5", "10_20", "0_5", "10_20"),
+  species = c("ALTERNI", "ALTERNI", "DENSI", "DENSI", "SARCO", "SARCO"),
+  n_perc_trend = c(0.02459, 0.05212, 0.00507, 0.13975, 0.02566, 0.13459),
+  SE = c(0.00849, 0.01403, 0.01481, 0.02286, 0.02241, 0.02710),
+  df = rep(52, 6),
+  lower_CL = c(0.00756, 0.02397, -0.02464, 0.09388, -0.01932, 0.08022),
+  upper_CL = c(0.0416, 0.0803, 0.0348, 0.1856, 0.0706, 0.1890)
+)
+# Déterminer la significativité basée sur les intervalles de confiance
+emtrends_results$significant <- with(emtrends_results, lower_CL > 0 | upper_CL < 0)
+# Inverser la significativité
+emtrends_results$significant <- !emtrends_results$significant
+# Fusionner les résultats de significativité avec vos données principales
+Alice_ready <- Alice_ready %>%
+  left_join(emtrends_results, by = c("species", "depth"))
+
+
+# Créer le graphique avec des courbes significatives pleines et non significatives en pointillés
+ggplot(Alice_ready, aes(Phosphorus_perc, n_perc, color = depth)) +
+  geom_point(size = 4,aes(shape=site)) +
+  facet_grid(~ species, labeller = labeller(species = species_labels)) +
+  geom_smooth(aes(linetype = ifelse(significant, "solid", "dashed")), method = "lm", alpha = 0.35) +
+  theme_cowplot() +
+  labs(x = "Phosphorus (weight%)", y = "Nitrogen (weight%)") +
+  scale_linetype_manual(values = c("solid", "dashed"), guide = FALSE) +
+  theme(
+    legend.direction = "horizontal",
+    legend.position = "top",
+    legend.title = element_text(size = 20),
+    axis.title.x = element_text(size = 20),
+    strip.text.x = element_text(size = 20),
+    strip.text.y = element_text(face = "bold"),
+    axis.text.y = element_text(size = 20),
+    axis.text.x = element_text(size = 20),
+    axis.title.y = element_text(size = 20),
+    legend.text = element_text(size = 20),
+    panel.spacing = unit(5, "lines"),
+    panel.grid.major = element_line(color = "grey80"),
+    panel.grid.minor = element_line(color = "grey90"),
+    panel.background = element_rect(fill = "white", color = NA)
+  )
+
+#######
+library(ggplot2)
+
+# Créer le graphique avec les points et une courbe de tendance pour la profondeur 10-20 cm
+ggplot(Alice_ready, aes(temperature, sqrt(C_perc), color = depth)) +
+  facet_grid(~ species) +
+  geom_point(size = 1) +
+  geom_smooth(data = subset(Alice_ready, depth == "10_20"), method = "lm", aes(group = 1), color = "red", se = FALSE) +
+  theme_cowplot() +
+  labs(y = "Square root of Carbon (weight%)", x = "Temperature") +
+  theme(
+    legend.direction = "horizontal",
+    legend.position = "top",
+    legend.title = element_blank(),
+    axis.title.x = element_text(size = 20),
+    axis.title.y = element_text(size = 20),
+    strip.text.x = element_text(size = 20),
+    strip.text.y = element_text(face = "bold", size = 20),
+    axis.text.x = element_text(size = 20),
+    axis.text.y = element_text(size = 20),
+    panel.spacing = unit(2, "lines"),
+    panel.grid.major = element_line(color = "grey80"),
+    panel.grid.minor = element_line(color = "grey90"),
+    panel.background = element_rect(fill = "white", color = NA)
+  )
+
+#######
+# Charger les bibliothèques nécessaires
+# Charger les bibliothèques nécessaires
+library(ggplot2)
+library(dplyr)
+library(glmmTMB)
+library(emmeans)
+library(cowplot)
+
+# Exécuter le modèle et les tests
+# Charger les bibliothèques nécessaires
+library(ggplot2)
+library(dplyr)
+library(glmmTMB)
+library(emmeans)
+library(cowplot)
+
+# Exécuter le modèle et les tests
+# Charger les bibliothèques nécessaires
+library(ggplot2)
+library(dplyr)
+library(glmmTMB)
+library(emmeans)
+library(cowplot)
+
+# Exécuter le modèle et les tests
+# Charger les bibliothèques nécessaires
+library(ggplot2)
+library(dplyr)
+library(glmmTMB)
+library(emmeans)
+library(cowplot)
+
+# Exécuter le modèle et les tests
+M45 <- glmmTMB(sqrt(C_perc) ~ species * depth * P_N_perc + (1 | site), data = Alice_ready)
+res <- simulateResiduals(fittedModel = M45)
+plot(res)
+testDispersion(res)
+testZeroInflation(res)
+testQuantiles(res)
+Anova(M45)
+
+emm_s.t <- emtrends(M45, pairwise ~ species, var = "P_N_perc")
+emm_s.t
+f <- emtrends(M45, pairwise ~ depth, var = "P_N_perc")
+f
+
+# Créer un dataframe pour la significativité des espèces
+species_significance <- data.frame(
+  species = c("S.alterniflora", "S.densiflora", "Salicornia.spp"),
+  significant = c(TRUE, FALSE, TRUE)  # basé sur les p-values et intervalles de confiance
+)
+
+# Créer un dataframe pour la significativité des profondeurs
+depth_significance <- data.frame(
+  depth = c("0_5", "10_20"),
+  significant = c(TRUE, TRUE)  # basé sur les p-values et intervalles de confiance
+)
+
+# Joindre les résultats de significativité des espèces à votre dataframe originale
+Alice_ready <- Alice_ready %>%
+  mutate(species = case_when(
+    species == "ALTERNI" ~ "S.alterniflora",
+    species == "DENSI" ~ "S.densiflora",
+    species == "SARCO" ~ "Salicornia.spp"
+  )) %>%
+  left_join(species_significance, by = "species") %>%
+  rename(species_significant = significant)
+
+# Joindre les résultats de significativité des profondeurs à votre dataframe originale
+Alice_ready <- Alice_ready %>%
+  left_join(depth_significance, by = "depth") %>%
+  rename(depth_significant = significant)
+
+# Combiner les deux colonnes de significativité pour obtenir la significativité finale
+Alice_ready <- Alice_ready %>%
+  mutate(final_significant = ifelse(species_significant & depth_significant, "Significant", "Non-Significant"))
+
+# Définir un vecteur nommé pour les noms complets des espèces
+species_labels <- c(
+  "S.alterniflora" = "S.alterniflora",
+  "S.densiflora" = "S.densiflora",
+  "Salicornia.spp" = "Salicornia.spp"
+)
+
+# Créer le graphique avec des lignes continues pour les relations significatives et pointillées sinon
+ggplot(Alice_ready, aes(P_N_perc, C_perc, color = depth)) +
+  facet_grid(~ species, labeller = labeller(species = species_labels)) +
+  geom_smooth(aes(linetype = final_significant), method = "lm", alpha = 0.35, se = TRUE) +
+  geom_point(size = 2,aes(shape=site)) +
+  scale_linetype_manual(values = c("Non-Significant" = "dashed", "Significant" = "solid")) +  # lignes pointillées pour non significatif et continues pour significatif
+  theme_cowplot() +
+  labs(y = "Carbon (weight%)", x = "Ratio N/P (weight%)") +
+  theme(
+    legend.direction = "horizontal",
+    legend.position = "top",
+    legend.title = element_text(size = 20), 
+    axis.title.x = element_text(size = 20),
+    axis.title.y = element_text(size = 20),
+    strip.text.x = element_text(size = 20),
+    strip.text.y = element_text(face = "bold"),
+    axis.text.x = element_text(size = 20),
+    axis.text.y = element_text(size = 20),
+    legend.text = element_text(size = 20),
+    panel.spacing = unit(4, "lines"),
+    panel.grid.major = element_line(color = "grey80"),
+    panel.grid.minor = element_line(color = "grey90"),
+    panel.background = element_rect(fill = "white", color = NA)
+  )+
+  guides(linetype = "none")
